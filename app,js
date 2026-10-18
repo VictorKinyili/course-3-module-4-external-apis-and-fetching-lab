@@ -1,0 +1,55 @@
+const stateInput = document.getElementById('state-input');
+const getAlertsBtn = document.getElementById('get-alerts-btn');
+const errorMessageDiv = document.getElementById('error-message');
+const alertsSummaryDiv = document.getElementById('alerts-summary');
+const alertsListUl = document.getElementById('alerts-list');
+
+getAlertsBtn.addEventListener('click', () => {
+    const stateAbbr = stateInput.value.trim().toUpperCase();
+    
+    resetUI();
+
+    if (stateAbbr.length !== 2) {
+        showError(new Error("Please enter a valid 2-letter state abbreviation."));
+        return;
+    }
+
+    fetchWeatherAlerts(stateAbbr);
+});
+
+function fetchWeatherAlerts(state) {
+    fetch(`https://weather.gov{state}`)
+        .then(res => {
+            if (!res.ok) throw new Error(`Failed to fetch alerts (Status: ${res.status})`);
+            return res.json();
+        })
+        .then(data => {
+            console.log(data);
+            displayAlerts(data);
+        })
+        .catch(showError);
+}
+
+function displayAlerts(data) {
+    const features = data.features || [];
+    alertsSummaryDiv.textContent = `${data.title}: ${features.length}`;
+
+    features.forEach(alert => {
+        const li = document.createElement('li');
+        li.textContent = alert.properties.headline || "No headline provided";
+        alertsListUl.appendChild(li);
+    });
+}
+
+function resetUI() {
+    stateInput.value = '';
+    alertsSummaryDiv.textContent = '';
+    alertsListUl.innerHTML = '';
+    errorMessageDiv.textContent = '';
+    errorMessageDiv.classList.add('hidden');
+}
+
+function showError(error) {
+    errorMessageDiv.textContent = error.message;
+    errorMessageDiv.classList.remove('hidden');
+}
